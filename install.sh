@@ -2,7 +2,7 @@
 # Debian/Ubuntu bootstrap: apt, Vim (+Python3) from source, amix/vimrc + plugins, fzf,
 # Oh My Tmux, Oh My Zsh + p10k, Meslo fonts, git editor + bat symlink. Re-runs are safe.
 #
-# Usage: bash install.sh  (non-root; needs sudo, git, curl or wget)
+# Usage: bash install.sh  (non-root; needs sudo, git, curl)
 
 set -euo pipefail
 
@@ -232,17 +232,25 @@ ZSH_TMUX_AUTOQUIT=false'
 
 append_proxy_helpers() {
   append_once "$HOME/.zshrc" '[dot-install proxy]' '# [dot-install proxy]
+# Bypass list: applied on every interactive zsh startup so WSL/Windows-injected http_proxy also skips local/LAN/metadata.
+zsh_no_proxy_list="localhost,127.0.0.1,::1,.local,169.254.169.254,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+zsh_apply_no_proxy_bypass() {
+    export no_proxy="$zsh_no_proxy_list"
+    export NO_PROXY="$no_proxy"
+}
+zsh_apply_no_proxy_bypass
+
 setp() {
     local proxy_host="127.0.0.1"
     local proxy_port="12334"
-    export HTTP_PROXY="http://${proxy_host}:${proxy_port}"
-    export HTTPS_PROXY="http://${proxy_host}:${proxy_port}"
-    export FTP_PROXY="http://${proxy_host}:${proxy_port}"
-    export ALL_PROXY="socks5://${proxy_host}:${proxy_port}"
+    local proxy_url="http://${proxy_host}:${proxy_port}"
+    export HTTP_PROXY="$proxy_url" HTTPS_PROXY="$proxy_url"
+    export http_proxy="$proxy_url" https_proxy="$proxy_url"
+    zsh_apply_no_proxy_bypass
 }
 
 unsetp() {
-    unset HTTP_PROXY HTTPS_PROXY FTP_PROXY ALL_PROXY
+    unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
 }'
 }
 
